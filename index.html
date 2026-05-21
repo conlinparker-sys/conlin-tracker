@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Conlin Household</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #f0ede8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 24px 16px 60px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      max-width: 780px;
+      margin: 0 auto 24px;
+    }
+    .header h1 { font-size: 1.5rem; font-weight: 700; }
+    .header .date { font-size: 0.85rem; color: #888; margin-top: 2px; }
+    .btn-refresh {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #333;
+    }
+    .btn-refresh:hover { background: #f5f5f5; }
+
+    /* ── Stats ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 780px;
+      margin: 0 auto 8px;
+    }
+    .stat-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px 12px;
+      text-align: center;
+    }
+    .stat-num  { font-size: 2rem; font-weight: 600; line-height: 1; }
+    .stat-label { font-size: 0.78rem; color: #888; margin-top: 4px; }
+    .stat-overdue .stat-num { color: #c0392b; }
+
+    .sync-time {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #5a9a6a;
+      margin-bottom: 20px;
+    }
+
+    /* ── Add task card ── */
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 20px;
+      max-width: 780px;
+      margin: 0 auto 20px;
+    }
+    .card-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      color: #999;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .task-input {
+      width: 100%;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .task-input:focus { border-color: #aaa; }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .row select, .row input[type="date"], .row input[type="time"] {
+      flex: 1;
+      min-width: 120px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 0.85rem;
+      color: #333;
+      background: #fff;
+      outline: none;
+    }
+    .row select:focus, .row input:focus { border-color: #aaa; }
+
+    .btn-add {
+      width: 100%;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .btn-add:hover { background: #333; }
+    .btn-add:disabled { background: #aaa; cursor: not-allowed; }
+
+    /* ── Filters ── */
+    .filters {
+      max-width: 780px;
+      margin: 0 auto 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .filter-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-label { font-size: 0.8rem; color: #888; width: 60px; flex-shrink: 0; }
+    .chip {
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      padding: 5px 14px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      background: #fff;
+      color: #555;
+      transition: all .15s;
+    }
+    .chip.active {
+      background: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
+    }
+
+    /* ── Task sections ── */
+    .section { max-width: 780px; margin: 0 auto 20px; }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 4px 0;
+      user-select: none;
+    }
+    .section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #555;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .count-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e0e0e0;
+      color: #555;
+    }
+    .count-badge.today  { background: #dceffe; color: #1565c0; }
+    .count-badge.week   { background: #e8f5e9; color: #2e7d32; }
+    .count-badge.later  { background: #fff3e0; color: #e65100; }
+    .count-badge.done   { background: #f3f3f3; color: #888; }
+    .section-toggle { font-size: 0.8rem; color: #aaa; }
+
+    .task-list { list-style: none; margin-top: 8px; }
+
+    .task-item {
+      background: #fff;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      transition: opacity .2s;
+    }
+    .task-item.done-item { opacity: .55; }
+
+    .task-check {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ccc;
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      transition: all .15s;
+    }
+    .task-check.checked {
+      background: #1a1a1a;
+      border-color: #1a1a1a;
+    }
+    .task-check.checked::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(45deg) translateY(-1px);
+    }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-text {
+      font-size: 0.92rem;
+      color: #1a1a1a;
+      line-height: 1.4;
+    }
+    .done-item .task-text { text-decoration: line-through; color: #999; }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 5px;
+    }
+    .tag {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f0f0f0;
+      color: #666;
+    }
+    .tag.owner  { background: #e8f4ff; color: #1565c0; }
+    .tag.cat    { background: #f3f0ff; color: #5e35b1; }
+    .tag.time   { background: #fff8e1; color: #e65100; }
+    .tag.rec    { background: #e8f5e9; color: #2e7d32; }
+    .tag.overdue { background: #ffebee; color: #c62828; }
+
+    .btn-delete {
+      border: none;
+      background: none;
+      color: #ccc;
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .btn-delete:hover { color: #e53935; background: #fff5f5; }
+
+    .empty { color: #aaa; font-size: 0.85rem; padding: 8px 0; font-style: italic; }
+
+    /* ── Completed section ── */
+    .completed-section { max-width: 780px; margin: 0 auto; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(60px);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      opacity: 0;
+      transition: all .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 500px) {
+      .stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .stat-num { font-size: 1.5rem; }
+      .row select, .row input { min-width: 100px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Conlin Household</h1>
+    <div class="date" id="dateLabel"></div>
+  </div>
+  <button class="btn-refresh" onclick="loadTasks()">&#8635; Refresh</button>
+</div>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card"><div class="stat-num" id="statOpen">—</div><div class="stat-label">Open</div></div>
+  <div class="stat-card"><div class="stat-num" id="statDone">—</div><div class="stat-label">Done today</div></div>
+  <div class="stat-card stat-overdue"><div class="stat-num" id="statOverdue">—</div><div class="stat-label">Overdue</div></div>
+</div>
+<div class="sync-time" id="syncTime"></div>
+
+<!-- Add task -->
+<div class="card">
+  <div class="card-label">Add a Task</div>
+  <input class="task-input" id="taskDesc" type="text" placeholder="Task description..." />
+  <div class="row">
+    <select id="taskOwner">
+      <option value="">Owner</option>
+      <option>Parker</option>
+      <option>Kelsey</option>
+      <option>Joint</option>
+    </select>
+    <select id="taskCategory">
+      <option value="">Category</option>
+      <option>Home</option>
+      <option>Errands</option>
+      <option>Ramie</option>
+      <option>Finance</option>
+      <option>Startup</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="row">
+    <input type="date" id="taskDate" />
+    <input type="time" id="taskTime" placeholder="Time (optional)" />
+    <select id="taskRecurring">
+      <option value="none">No repeat</option>
+      <option value="daily">Daily</option>
+      <option value="every3days">Every 3 days</option>
+      <option value="weekly">Weekly</option>
+    </select>
+  </div>
+  <button class="btn-add" id="btnAdd" onclick="addTask()">+ Add task</button>
+</div>
+
+<!-- Filters -->
+<div class="filters">
+  <div class="filter-row">
+    <span class="filter-label">Owner</span>
+    <button class="chip active" data-filter="owner" data-val="All" onclick="setFilter('owner','All',this)">All</button>
+    <button class="chip"        data-filter="owner" data-val="Parker" onclick="setFilter('owner','Parker',this)">Parker</button>
+    <button class="chip"        data-filter="owner" data-val="Kelsey" onclick="setFilter('owner','Kelsey',this)">Kelsey</button>
+    <button class="chip"        data-filter="owner" data-val="Joint"  onclick="setFilter('owner','Joint',this)">Joint</button>
+  </div>
+  <div class="filter-row">
+    <span class="filter-label">Category</span>
+    <button class="chip active" data-filter="cat" data-val="All"     onclick="setFilter('cat','All',this)">All</button>
+    <button class="chip"        data-filter="cat" data-val="Home"    onclick="setFilter('cat','Home',this)">Home</button>
+    <button class="chip"        data-filter="cat" data-val="Errands" onclick="setFilter('cat','Errands',this)">Errands</button>
+    <button class="chip"        data-filter="cat" data-val="Ramie"   onclick="setFilter('cat','Ramie',this)">Ramie</button>
+    <button class="chip"        data-filter="cat" data-val="Finance" onclick="setFilter('cat','Finance',this)">Finance</button>
+    <button class="chip"        data-filter="cat" data-val="Startup" onclick="setFilter('cat','Startup',this)">Startup</button>
+    <button class="chip"        data-filter="cat" data-val="Other"   onclick="setFilter('cat','Other',this)">Other</button>
+  </div>
+</div>
+
+<!-- Open Tasks -->
+<div class="section">
+  <div class="section-label" style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#555;margin-bottom:10px;">Open Tasks</div>
+
+  <div class="section-header" onclick="toggleSection('today')">
+    <span class="section-title">Today <span class="count-badge today" id="badge-today">0</span></span>
+    <span class="section-toggle" id="toggle-today">▾</span>
+  </div>
+  <ul class="task-list" id="list-today"></ul>
+
+  <div class="section-header" style="margin-top:12px;" onclick="toggleSection('week')">
+    <span class="section-title">This week <span class="count-badge week" id="badge-week">0</span></span>
+    <span class="section-toggle" id="toggle-week">▾</span>
+  </div>
+  <ul class="task-list" id="list-week"></ul>
+
+  <div class="section-header" style="margin-top:12px;" onclick="toggleSection('later')">
+    <span class="section-title">Week+ <span class="count-badge later" id="badge-later">0</span></span>
+    <span class="section-toggle" id="toggle-later">▾</span>
+  </div>
+  <ul class="task-list" id="list-later"></ul>
+
+  <div class="section-header" style="margin-top:12px;" onclick="toggleSection('nodate')">
+    <span class="section-title">No date <span class="count-badge" id="badge-nodate">0</span></span>
+    <span class="section-toggle" id="toggle-nodate">▾</span>
+  </div>
+  <ul class="task-list" id="list-nodate"></ul>
+</div>
+
+<!-- Completed Today -->
+<div class="completed-section">
+  <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#555;max-width:780px;margin:0 auto 10px;">Completed Today</div>
+  <ul class="task-list" id="list-done"></ul>
+  <p class="empty" id="emptyDone" style="max-width:780px;margin:0 auto;">Nothing completed yet today</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────
+// Paste your deployed Apps Script web app URL here after deployment
+const API_URL = 'https://script.google.com/macros/s/AKfycbwn8hCHX6EamOzHuq7_Psr7tVZLyJXJ68UTcFDCLBrRueQl-KtqrnaXVrn4a5EHM0CM/exec';
+
+// ── State ─────────────────────────────────────────────────────
+let allTasks = [];
+let filters  = { owner: 'All', cat: 'All' };
+const collapsed = {};
+
+// ── Init ──────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const d = new Date();
+  document.getElementById('dateLabel').textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
+  loadTasks();
+});
+
+// ── API calls ─────────────────────────────────────────────────
+async function api(method, params) {
+  if (method === 'GET') {
+    const qs  = new URLSearchParams(params).toString();
+    const res = await fetch(`${API_URL}?${qs}`);
+    return res.json();
+  } else {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    return res.json();
+  }
+}
+
+async function loadTasks() {
+  try {
+    const data = await api('GET', { action: 'getTasks' });
+    if (data.success) {
+      allTasks = data.tasks;
+      render();
+      const now = new Date();
+      document.getElementById('syncTime').textContent =
+        `Last synced ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+    }
+  } catch (e) {
+    toast('Could not reach server — check API_URL in index.html');
+  }
+}
+
+async function addTask() {
+  const desc = document.getElementById('taskDesc').value.trim();
+  if (!desc) { toast('Please enter a task description'); return; }
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+
+  const task = {
+    task:      desc,
+    owner:     document.getElementById('taskOwner').value    || 'Joint',
+    category:  document.getElementById('taskCategory').value || 'Other',
+    dueDate:   document.getElementById('taskDate').value,
+    dueTime:   document.getElementById('taskTime').value,
+    recurring: document.getElementById('taskRecurring').value,
+  };
+
+  try {
+    const res = await api('POST', { action: 'addTask', task });
+    if (res.success) {
+      document.getElementById('taskDesc').value = '';
+      document.getElementById('taskDate').value = '';
+      document.getElementById('taskTime').value = '';
+      document.getElementById('taskRecurring').value = 'none';
+      await loadTasks();
+      toast('Task added');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '+ Add task';
+  }
+}
+
+async function toggleComplete(id, currentlyDone) {
+  const action = currentlyDone ? 'uncomplete' : 'completeTask';
+  await api('POST', { action, id });
+  await loadTasks();
+}
+
+async function deleteTask(id) {
+  if (!confirm('Delete this task?')) return;
+  await api('POST', { action: 'deleteTask', id });
+  allTasks = allTasks.filter(t => t.id !== id);
+  render();
+}
+
+// ── Filters ───────────────────────────────────────────────────
+function setFilter(type, val, el) {
+  filters[type] = val;
+  document.querySelectorAll(`[data-filter="${type}"]`).forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function filtered() {
+  return allTasks.filter(t => {
+    if (filters.owner !== 'All' && t.owner !== filters.owner) return false;
+    if (filters.cat   !== 'All' && t.category !== filters.cat) return false;
+    return true;
+  });
+}
+
+// ── Render ────────────────────────────────────────────────────
+function render() {
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const weekEnd   = new Date(today); weekEnd.setDate(weekEnd.getDate() + 7);
+  const todayStr  = fmtDate(today);
+
+  const tasks = filtered();
+  const open  = tasks.filter(t => t.status === 'open');
+  const done  = tasks.filter(t => t.status === 'done' && t.completedDate === todayStr);
+
+  const buckets = { today: [], week: [], later: [], nodate: [] };
+
+  open.forEach(t => {
+    if (!t.dueDate) { buckets.nodate.push(t); return; }
+    const d = parseDate(t.dueDate);
+    if (d <= today)       buckets.today.push(t);   // today + overdue
+    else if (d < weekEnd) buckets.week.push(t);
+    else                  buckets.later.push(t);
+  });
+
+  // Stats
+  const overdue = open.filter(t => t.dueDate && parseDate(t.dueDate) < today);
+  document.getElementById('statOpen').textContent    = open.length;
+  document.getElementById('statDone').textContent    = done.length;
+  document.getElementById('statOverdue').textContent = overdue.length;
+
+  // Render buckets
+  renderBucket('today',  buckets.today,  false);
+  renderBucket('week',   buckets.week,   false);
+  renderBucket('later',  buckets.later,  false);
+  renderBucket('nodate', buckets.nodate, false);
+
+  // Completed today
+  const doneList = document.getElementById('list-done');
+  const emptyEl  = document.getElementById('emptyDone');
+  doneList.innerHTML = '';
+  if (done.length) {
+    emptyEl.style.display = 'none';
+    done.forEach(t => doneList.appendChild(makeItem(t, true)));
+  } else {
+    emptyEl.style.display = '';
+  }
+}
+
+function renderBucket(key, tasks, _) {
+  const list  = document.getElementById(`list-${key}`);
+  const badge = document.getElementById(`badge-${key}`);
+  badge.textContent = tasks.length;
+
+  if (collapsed[key]) { list.innerHTML = ''; return; }
+
+  list.innerHTML = '';
+  if (!tasks.length) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = 'None';
+    list.appendChild(li);
+    return;
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  tasks.forEach(t => {
+    const isOverdue = t.dueDate && parseDate(t.dueDate) < today;
+    list.appendChild(makeItem(t, false, isOverdue));
+  });
+}
+
+function makeItem(t, isDone, isOverdue) {
+  const li = document.createElement('li');
+  li.className = 'task-item' + (isDone ? ' done-item' : '');
+
+  const check = document.createElement('div');
+  check.className = 'task-check' + (isDone ? ' checked' : '');
+  check.onclick = () => toggleComplete(t.id, isDone);
+
+  const body = document.createElement('div');
+  body.className = 'task-body';
+
+  const text = document.createElement('div');
+  text.className = 'task-text';
+  text.textContent = t.task;
+
+  const meta = document.createElement('div');
+  meta.className = 'task-meta';
+  if (t.owner)    meta.appendChild(tag(t.owner,    'owner'));
+  if (t.category) meta.appendChild(tag(t.category, 'cat'));
+  if (t.dueDate) {
+    const label = isOverdue
+      ? `Overdue · ${humanDate(t.dueDate)}${t.dueTime ? ' ' + fmt12(t.dueTime) : ''}`
+      : `${humanDate(t.dueDate)}${t.dueTime ? ' · ' + fmt12(t.dueTime) : ''}`;
+    meta.appendChild(tag(label, isOverdue ? 'overdue' : 'time'));
+  } else if (t.dueTime) {
+    meta.appendChild(tag(fmt12(t.dueTime), 'time'));
+  }
+  if (t.recurring && t.recurring !== 'none') {
+    const labels = { daily: 'Daily', every3days: 'Every 3 days', weekly: 'Weekly' };
+    meta.appendChild(tag('↻ ' + (labels[t.recurring] || t.recurring), 'rec'));
+  }
+
+  body.appendChild(text);
+  body.appendChild(meta);
+
+  const del = document.createElement('button');
+  del.className = 'btn-delete';
+  del.innerHTML = '&times;';
+  del.onclick = () => deleteTask(t.id);
+
+  li.appendChild(check);
+  li.appendChild(body);
+  li.appendChild(del);
+  return li;
+}
+
+function tag(text, cls) {
+  const s = document.createElement('span');
+  s.className = `tag ${cls}`;
+  s.textContent = text;
+  return s;
+}
+
+function toggleSection(key) {
+  collapsed[key] = !collapsed[key];
+  const toggle = document.getElementById(`toggle-${key}`);
+  toggle.textContent = collapsed[key] ? '▸' : '▾';
+  render();
+}
+
+// ── Utilities ─────────────────────────────────────────────────
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseDate(str) {
+  const [y,m,d] = str.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  dt.setHours(0,0,0,0);
+  return dt;
+}
+
+function humanDate(str) {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const [y,m,d] = str.split('-').map(Number);
+  return `${months[m-1]} ${d}`;
+}
+
+function fmt12(time24) {
+  if (!time24) return '';
+  const [h,m] = time24.split(':').map(Number);
+  const ampm = h >= 12 ? 'pm' : 'am';
+  const h12  = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
+function toast(msg, duration = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), duration);
+}
+</script>
+</body>
+</html>
