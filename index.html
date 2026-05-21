@@ -263,6 +263,40 @@
 
     .empty { color: #aaa; font-size: 0.85rem; padding: 8px 0; font-style: italic; }
 
+    /* ── Calendar section ── */
+    .cal-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 16px 20px;
+      max-width: 780px;
+      margin: 0 auto 20px;
+    }
+    .cal-event {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cal-event:last-child { border-bottom: none; }
+    .cal-time {
+      font-size: 0.78rem;
+      color: #888;
+      min-width: 80px;
+      padding-top: 2px;
+      flex-shrink: 0;
+    }
+    .cal-title { font-size: 0.92rem; color: #1a1a1a; }
+    .cal-name  { font-size: 0.72rem; color: #aaa; margin-top: 2px; }
+    .cal-dot   {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #4285f4;
+      flex-shrink: 0;
+      margin-top: 5px;
+    }
+    .cal-empty { color: #aaa; font-size: 0.85rem; font-style: italic; }
+
     /* ── Completed section ── */
     .completed-section { max-width: 780px; margin: 0 auto; }
 
@@ -308,6 +342,12 @@
   <div class="stat-card stat-overdue"><div class="stat-num" id="statOverdue">—</div><div class="stat-label">Overdue</div></div>
 </div>
 <div class="sync-time" id="syncTime"></div>
+
+<!-- Today's Calendar -->
+<div class="cal-card" id="calCard">
+  <div class="card-label">Today's Calendar</div>
+  <div id="calList"><span class="cal-empty">Loading calendar…</span></div>
+</div>
 
 <!-- Add task -->
 <div class="card">
@@ -419,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const d = new Date();
   document.getElementById('dateLabel').textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}`;
   loadTasks();
+  loadCalendar();
 });
 
 // ── API calls ─────────────────────────────────────────────────
@@ -434,6 +475,33 @@ async function api(method, params) {
       body: JSON.stringify(params),
     });
     return res.json();
+  }
+}
+
+async function loadCalendar() {
+  const container = document.getElementById('calList');
+  try {
+    const data = await api('GET', { action: 'getCalendarToday' });
+    if (!data.success || !data.events.length) {
+      container.innerHTML = '<span class="cal-empty">No calendar events today</span>';
+      return;
+    }
+    container.innerHTML = '';
+    data.events.forEach(ev => {
+      const div = document.createElement('div');
+      div.className = 'cal-event';
+      const timeStr = ev.allDay ? 'All day' : `${ev.start} – ${ev.end}`;
+      div.innerHTML = `
+        <div class="cal-dot"></div>
+        <div class="cal-time">${timeStr}</div>
+        <div>
+          <div class="cal-title">${ev.title}</div>
+          <div class="cal-name">${ev.calendar}</div>
+        </div>`;
+      container.appendChild(div);
+    });
+  } catch (e) {
+    container.innerHTML = '<span class="cal-empty">Could not load calendar</span>';
   }
 }
 
