@@ -463,25 +463,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── API calls ─────────────────────────────────────────────────
-async function api(method, params) {
-  if (method === 'GET') {
-    const qs  = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_URL}?${qs}`);
-    return res.json();
-  } else {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-    });
-    return res.json();
-  }
+async function api(params) {
+  const qs  = new URLSearchParams(params).toString();
+  const res = await fetch(`${API_URL}?${qs}`);
+  return res.json();
 }
 
 async function loadCalendar() {
   const container = document.getElementById('calList');
   try {
-    const data = await api('GET', { action: 'getCalendarToday' });
+    const data = await api({ action: 'getCalendarToday' });
     if (!data.success || !data.events.length) {
       container.innerHTML = '<span class="cal-empty">No calendar events today</span>';
       return;
@@ -507,7 +498,7 @@ async function loadCalendar() {
 
 async function loadTasks() {
   try {
-    const data = await api('GET', { action: 'getTasks' });
+    const data = await api({ action: 'getTasks' });
     if (data.success) {
       allTasks = data.tasks;
       render();
@@ -538,7 +529,7 @@ async function addTask() {
   };
 
   try {
-    const res = await api('POST', { action: 'addTask', task });
+    const res = await api({ action: 'addTask', task: JSON.stringify(task) });
     if (res.success) {
       document.getElementById('taskDesc').value = '';
       document.getElementById('taskDate').value = '';
@@ -555,13 +546,13 @@ async function addTask() {
 
 async function toggleComplete(id, currentlyDone) {
   const action = currentlyDone ? 'uncomplete' : 'completeTask';
-  await api('POST', { action, id });
+  await api({ action, id });
   await loadTasks();
 }
 
 async function deleteTask(id) {
   if (!confirm('Delete this task?')) return;
-  await api('POST', { action: 'deleteTask', id });
+  await api({ action: 'deleteTask', id });
   allTasks = allTasks.filter(t => t.id !== id);
   render();
 }
